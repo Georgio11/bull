@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@800&family=Montserrat:wght@900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="wrapper">
+        <div class="bull"></div>
+        <div class="dekor1"></div>
+        <div class="dekor2"></div>
+        <div class="coin"><div></div></div>
+        <div class="coin coin2"><div></div></div>
+        <div class="coin coin3"><div></div></div>
+        <div class="coin coin4"><div></div></div>
+        <div class="coin coin5"><div></div></div>
+        <div class="logo"><img src="images/logo.webp" alt="logo"></div>
+        <div class="info">Número de tentativas: &nbsp; <span class="tries"> 2</span></div>
+        <div class="wheel_wrapper">
+            <div class="wheel_container">
+                <div class="wheel_bg"></div>
+                <div class="wheel_frame">
+                    <div class="wheel"></div>
+                </div>
+                <div class="btn"></div>
+            </div>
+        </div>
+        <div class="partners">
+            <img src="images/partners.webp" alt="partners">
+        </div>
+
+        <div class="modal_container">
+            <div class="modal">
+                <div class="btns">
+                    <button>Gire novamente</button>
+                    <button>Obter o prêmio</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let wrapper = document.querySelector(".wrapper");
+        let wheel = document.querySelector('.wheel');
+        let btn = document.querySelector('.btn');
+        let tries = document.querySelector('.tries');
+        let modalContainer = document.querySelector('.modal_container');
+        let modal = document.querySelector('.modal');
+        let bonus = document.querySelector('.bonus');
+        let money = document.querySelector('.money');
+        let modalBtn = document.querySelector('.btns button:nth-child(1)');
+        let winBtn = document.querySelector('.btns button:nth-child(2)');
+        let wheelFrame = document.querySelector('.wheel_container');
+        let wheelBg = document.querySelector('.wheel_bg');
+        let wheelWidth = wheelFrame.offsetWidth;
+
+        let spinCount = 2;
+
+        function adaptationElements() {
+            const aspectRatio = window.innerWidth / window.innerHeight;
+            let aspectClass;
+
+            if (aspectRatio >= 2) {
+                aspectClass = 'modificate1';
+            } else if (aspectRatio >= 1.5) {
+                aspectClass = 'modificate2';
+            } else if (aspectRatio > 1) {
+                aspectClass = 'modificate3';
+            } else {
+                aspectClass = 'modificate4';
+            }
+
+            wrapper.className = `wrapper ${aspectClass}`;
+        }
+
+        adaptationElements();
+        window.addEventListener('resize', adaptationElements);
+
+        function promiseAfterTimeout(seconds) {
+            return new Promise(function (resolve) {
+                setTimeout(() => resolve(), seconds * 1000);
+            });
+        };
+
+        function rotateWheel(degr) {
+            wheel.style.transform = 'rotate(' + degr + 'deg)';
+            return promiseAfterTimeout(5);
+        };
+
+        function launchSpin(degrees) {
+            currentRotation += degrees;
+            return rotateWheel(currentRotation);
+        };
+
+        let spinState = {
+            clickedOnce: false,
+            count: 0
+        };
+
+        let currentRotation = 0;
+
+        let isAnimating = false;
+
+        function setButtonsState(disabled, cursorStyle) {
+            btn.disabled = disabled;
+            btn.style.cursor = cursorStyle;
+        };
+
+        function setClasses() {
+            modalContainer.classList.add('active');
+            setInterval(()=> {
+                modalContainer.classList.add('opacity');
+            }, 800)
+        }
+
+        let startY = 0;
+
+        function handleTouchStart(event) {
+            startY = event.touches[0].clientY;
+        }
+
+        function handleTouchMove(event) {
+            const moveY = event.touches[0].clientY;
+            const diffY = startY - moveY;
+
+            if (diffY < 0) {
+                if (!isAnimating && spinState.count < 2) {
+                isAnimating = true;
+                setButtonsState(true, 'default');
+
+                if (!spinState.clickedOnce) {
+                    launchSpin(3600).then(() => {
+                        spinState.clickedOnce = true;
+                        spinState.count++;
+                        setButtonsState(false, 'pointer');
+                        isAnimating = false;
+                        setClasses();
+                    });
+                }
+
+                spinCount--;
+                tries.innerHTML = spinCount;
+            }
+                wheelFrame.removeEventListener('touchmove', handleTouchMove);
+                wheelFrame.removeEventListener('touchstart', handleTouchStart);
+            }
+        }
+        wheelFrame.addEventListener('touchstart', handleTouchStart, false);
+        wheelFrame.addEventListener('touchmove', handleTouchMove, false);
+
+        btn.addEventListener('click', function() {
+            if (!isAnimating && spinState.count < 2) {
+                isAnimating = true;
+                setButtonsState(true, 'default');
+
+                if (!spinState.clickedOnce) {
+                    launchSpin(3370).then(() => {
+                        spinState.clickedOnce = true;
+                        spinState.count++;
+                        setButtonsState(false, 'pointer');
+                        isAnimating = false;
+                        setClasses();
+                    });
+                }
+
+                spinCount--;
+                tries.innerHTML = spinCount;
+            }
+        });
+
+        modalBtn.addEventListener('click', ()=> {
+            modalContainer.classList.remove('active');
+            modalContainer.classList.remove('opacity');
+            if (spinCount == 1){
+                launchSpin(2700).then(() => {
+                    modalContainer.classList.add('active');
+                    spinState.count++;
+                    setButtonsState(false, 'pointer');
+                    isAnimating = false;
+                    setClasses();
+                    modal.classList.add('active');
+                    modalBtn.classList.add('active');
+                    winBtn.classList.add('active');
+                });
+            } 
+            spinCount--;
+            tries.innerHTML = spinCount;
+        })
+
+        // window.onload = function() {
+        //     const urlParams = new URLSearchParams(window.location.search);
+        //     const clickId = urlParams.get('click_id');
+        //     if(localStorage.getItem('userVisited')) {
+        //         window.location.assign(`https://ik01u3.top/p/${clickId}`);
+        //     } else {
+        //         localStorage.setItem('userVisited', 'true');
+        //     }
+        // };
+    </script>
+</body>
+</html>
